@@ -1,20 +1,24 @@
 import SwiftUI
 
+// MARK: - Định nghĩa feature (chức năng)
 struct DemoFeature: Identifiable {
     let id = UUID()
     let name: String
     let description: String
     
-    // Tên file patch trong bundle (không có .3105)
+    // Tên file .3105 trong bundle (không có đuôi .3105)
+    // Khi bật/tắt chức năng, app sẽ đọc file này
     var patchResource: String? {
-        if name == "Magic V4" {
-            return "Magic"
+        switch name {
+        case "Magic V4":
+            return "Magic"          // ← file Magic.3105
+        case "Proxy Aim Body":
+            return "AimBody"        // ← file AimBody.3105 (nếu có)
+        case "Proxy Aim Neck V2":
+            return "AimNeckV2"      // ← file AimNeckV2.3105 (nếu có)
+        default:
+            return nil
         }
-        // Thêm các chức năng khác nếu có
-        // if name == "Proxy Aim Body" {
-        //     return "AimBody"
-        // }
-        return nil
     }
     
     var hasPatch: Bool {
@@ -22,10 +26,11 @@ struct DemoFeature: Identifiable {
     }
 }
 
+// MARK: - Giao diện game demo
 struct GameDemoView: View {
     let title: String
     let imageName: String
-    let bundleID: String
+    let bundleID: String          // com.dts.freefireth hoặc com.dts.freefiremax
     @ObservedObject var state: ProxyDemoState
     @Environment(\.dismiss) private var dismiss
     
@@ -34,6 +39,7 @@ struct GameDemoView: View {
     @State private var enabled = Set<Int>()
     @State private var failedIndices = Set<Int>()
     
+    // Danh sách chức năng Proxy
     private let proxyFeatures: [DemoFeature] = [
         DemoFeature(name: "Proxy Aim Body", description: "Full đỏ toàn thân"),
         DemoFeature(name: "Proxy Aim Neck V2", description: "HeadShot ngực và cổ siêu bá"),
@@ -42,6 +48,7 @@ struct GameDemoView: View {
         DemoFeature(name: "Magic V4", description: "Bắn xung quay người vẫn tính dame")
     ]
     
+    // Danh sách chức năng Định Vị
     private let locationFeatures: [DemoFeature] = [
         DemoFeature(name: "Định Vị Súng Xanh", description: "Hiển thị định vị theo cấu hình"),
         DemoFeature(name: "Định Vị Súng Đỏ", description: "Hiển thị định vị theo cấu hình"),
@@ -55,6 +62,7 @@ struct GameDemoView: View {
                 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
+                        // Icon game
                         Image(imageName)
                             .resizable()
                             .scaledToFit()
@@ -69,6 +77,7 @@ struct GameDemoView: View {
                             .font(.subheadline.monospaced())
                             .foregroundStyle(.secondary)
                         
+                        // Nút mở game
                         Button(action: openGame) {
                             HStack(spacing: 10) {
                                 Image(systemName: "play.fill")
@@ -88,8 +97,10 @@ struct GameDemoView: View {
                         }
                         .buttonStyle(.plain)
                         
+                        // Tab bar
                         tabBar
                         
+                        // Nội dung theo tab
                         Group {
                             switch selectedTab {
                             case 0:
@@ -120,6 +131,7 @@ struct GameDemoView: View {
         }
     }
     
+    // MARK: - Tab Bar
     private var tabBar: some View {
         HStack(spacing: 0) {
             GameTab(
@@ -164,6 +176,7 @@ struct GameDemoView: View {
         }
     }
     
+    // MARK: - Danh sách feature
     private func featureList(features: [DemoFeature]) -> some View {
         VStack(spacing: 10) {
             ForEach(features.indices, id: \.self) { index in
@@ -185,10 +198,12 @@ struct GameDemoView: View {
         }
     }
     
+    // MARK: - Một row feature (có toggle)
     private func featureRow(_ feature: DemoFeature, index: Int) -> some View {
         let accent = AppTheme.rowColor(index + selectedTab * 2)
         
         return HStack(spacing: 12) {
+            // Icon
             Image(systemName: enabled.contains(index) ? "checkmark" : "bolt.fill")
                 .foregroundStyle(enabled.contains(index) ? Color.green : accent)
                 .frame(width: 40, height: 40)
@@ -197,18 +212,20 @@ struct GameDemoView: View {
                     in: RoundedRectangle(cornerRadius: 11, style: .continuous)
                 )
             
+            // Tên và mô tả
             VStack(alignment: .leading, spacing: 3) {
                 Text(feature.name)
                     .font(.headline)
                     .lineLimit(1)
                 
-                Text(failedIndices.contains(index) ? "Chức năng đang bảo trì" : feature.description)
+                Text(failedIndices.contains(index) ? "⚠️ Chức năng đang bảo trì" : feature.description)
                     .font(.caption2)
                     .foregroundStyle(failedIndices.contains(index) ? Color.orange : Color.secondary)
             }
             
             Spacer(minLength: 8)
             
+            // Trạng thái loading / toggle
             if busyIndex == index {
                 ProgressView()
                     .progressViewStyle(.circular)
@@ -225,18 +242,19 @@ struct GameDemoView: View {
                         .foregroundStyle(.red)
                 }
                 
+                // TOGGLE BẬT/TẮT - KẾT NỐI VỚI FILE .3105
                 Toggle(
                     "",
                     isOn: Binding(
                         get: { enabled.contains(index) },
                         set: { value in
-                            handleFeature(feature, index: index, value: value)
+                            handleFeatureToggle(feature, index: index, value: value)
                         }
                     )
                 )
                 .labelsHidden()
                 .tint(accent)
-                .disabled(!feature.hasPatch)
+                .disabled(!feature.hasPatch)  // Nếu không có file .3105 thì disable
             }
         }
         .padding(.horizontal, 13)
@@ -249,15 +267,19 @@ struct GameDemoView: View {
         .contentShape(Rectangle())
     }
     
-    private func handleFeature(_ feature: DemoFeature, index: Int, value: Bool) {
+    // MARK: - XỬ LÝ BẬT/TẮT CHỨC NĂNG (KẾT NỐI VỚI FILE .3105)
+    private func handleFeatureToggle(_ feature: DemoFeature, index: Int, value: Bool) {
+        // Kiểm tra busy
         guard busyIndex == nil else { return }
         
+        // Kiểm tra key license
         guard state.canUseFeatures else {
             enabled.remove(index)
             state.showToast(state.isLicenseExpired ? "⚠️ Key đã hết hạn" : "⚠️ Vui lòng kích hoạt Key trước")
             return
         }
         
+        // Kiểm tra có file .3105 không
         guard let resourceName = feature.patchResource else {
             enabled.remove(index)
             failedIndices.insert(index)
@@ -265,6 +287,7 @@ struct GameDemoView: View {
             return
         }
         
+        // Bắt đầu áp dụng
         busyIndex = index
         failedIndices.remove(index)
         
@@ -275,28 +298,31 @@ struct GameDemoView: View {
                 }
             }
             
-            let success = RealPatchManager.applyMagicPatch(
-                gameBundleID: bundleID,
-                isOn: value
+            // GỌI HÀM ÁP DỤNG PATCH TỪ FILE .3105
+            let success = RealPatchManager.applyPatchFrom3105(
+                resourceName: resourceName,   // Tên file .3105 (VD: "Magic")
+                gameBundleID: bundleID,       // ID game đang chọn
+                isOn: value                   // Bật hay tắt
             )
             
             if success {
                 if value {
                     enabled.insert(index)
-                    state.showToast("Đã kích hoạt thành công \(feature.name)")
+                    state.showToast("✅ Đã kích hoạt \(feature.name)")
                 } else {
                     enabled.remove(index)
-                    state.showToast("Đã tắt \(feature.name)")
+                    state.showToast("✅ Đã tắt \(feature.name)")
                 }
                 failedIndices.remove(index)
             } else {
                 enabled.remove(index)
                 failedIndices.insert(index)
-                state.showToast("⚠️ Chức năng đang bảo trì")
+                state.showToast("⚠️ Không thể áp dụng patch cho \(feature.name)")
             }
         }
     }
     
+    // MARK: - Mở game
     private func openGame() {
         let scheme = title == "Free Fire Max" ? "freefiremax" : "freefire"
         guard let url = URL(string: "\(scheme)://") else { return }
@@ -304,6 +330,7 @@ struct GameDemoView: View {
     }
 }
 
+// MARK: - Tab component
 struct GameTab: View {
     let title: String
     let icon: String
