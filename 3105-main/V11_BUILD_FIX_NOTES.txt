@@ -1,9 +1,0 @@
-ProxyVN SHOP DHP V11
-
-- Fixed SwiftUI conditional foregroundStyle type inference errors by using explicit Color values.
-- Bundled Magic.3105 as an app resource.
-- Vietnamese patch success text now reads: "Đã bật chức năng <tên> thành công!"
-- The bundled package is retained for import/testing inside the app.
-- iOS deployment target remains 16.0; runtime support gate covers configured 16/17/18/26/27 beta ranges.
-
-IMPORTANT: iOS app sandboxing does not permit this app to directly write another App Store app's private Documents container. The patch service in this project intentionally applies to its own app-owned storage.
