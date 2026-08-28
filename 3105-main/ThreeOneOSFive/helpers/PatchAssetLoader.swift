@@ -1,16 +1,34 @@
 import Foundation
 
 enum PatchAssetLoader {
-    static func load(_ definition: PatchDefinition) throws -> (project: PatchProject, data: Data) {
+    static func load(
+        definition: PatchDefinition,
+        gameBundleID: String
+    ) throws -> (project: PatchProject, data: Data) {
+        
+        // Chọn đúng asset name theo game
+        let assetName: String
+        if gameBundleID == "com.dts.freefireth" {
+            assetName = definition.assetNameFFTH
+        } else if gameBundleID == "com.dts.freefiremax" {
+            assetName = definition.assetNameFFMAX
+        } else {
+            throw NSError(
+                domain: "PatchAssetLoader",
+                code: 400,
+                userInfo: [NSLocalizedDescriptionKey: "Game không được hỗ trợ: \(gameBundleID)"]
+            )
+        }
+        
         guard let url = Bundle.main.url(
-            forResource: definition.assetName,
+            forResource: assetName,
             withExtension: "3105",
             subdirectory: "Patches"
         ) else {
             throw NSError(
                 domain: "PatchAssetLoader",
                 code: 404,
-                userInfo: [NSLocalizedDescriptionKey: "Không tìm thấy \(definition.assetName).3105 trong thư mục Patches"]
+                userInfo: [NSLocalizedDescriptionKey: "Không tìm thấy \(assetName).3105"]
             )
         }
         
