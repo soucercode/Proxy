@@ -3,7 +3,6 @@ import Foundation
 enum RealPatchManager {
     private static let fm = FileManager.default
     
-    // MARK: - Ghi log ra file trong Documents
     private static func writeLog(_ message: String) {
         guard let documentsPath = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first else {
             return
@@ -21,7 +20,6 @@ enum RealPatchManager {
         print(logEntry)
     }
     
-    // MARK: - Lấy container path của game
     static func getContainerPath(bundleID: String) -> String? {
         writeLog("🔍 getContainerPath: \(bundleID)")
         var error: NSString?
@@ -33,7 +31,6 @@ enum RealPatchManager {
         return path
     }
     
-    // MARK: - Áp dụng patch cho 1 game (ghi đè file đích)
     static func applyPatchToSingleGame(
         definition: PatchDefinition,
         gameBundleID: String,
@@ -42,22 +39,18 @@ enum RealPatchManager {
         writeLog("========================================")
         writeLog("📦 \(definition.featureName) -> \(gameBundleID), isOn=\(isOn)")
         
-        // Bước 1: Lấy container path
         guard let containerPath = getContainerPath(bundleID: gameBundleID) else {
-            writeLog("❌ KHÔNG CÓ CONTAINER cho \(gameBundleID)")
+            writeLog("❌ KHÔNG CÓ CONTAINER")
             return false
         }
         
-        // Bước 2: Đường dẫn đích trong game
         let fullTargetPath = (containerPath as NSString).appendingPathComponent(definition.targetPath)
         let backupPath = fullTargetPath + ".backup"
         writeLog("📁 Target: \(fullTargetPath)")
-        writeLog("💾 Backup: \(backupPath)")
         
         let targetExists = fm.fileExists(atPath: fullTargetPath)
         writeLog("📄 File đích tồn tại: \(targetExists)")
         
-        // Bước 3: Load file .3105 từ bundle
         guard let (project, _) = try? PatchAssetLoader.load(
             definition: definition,
             gameBundleID: gameBundleID
@@ -66,8 +59,6 @@ enum RealPatchManager {
             return false
         }
         
-        writeLog("✅ Project: \(project.name), rules: \(project.rules.count)")
-        
         guard let rule = project.rules.first else {
             writeLog("❌ KHÔNG CÓ RULE")
             return false
@@ -75,7 +66,6 @@ enum RealPatchManager {
         
         writeLog("📦 replacementData size: \(rule.replacementData.count) bytes")
         
-        // Bước 4: Bật hoặc tắt
         if isOn {
             writeLog("🟢 BẬT PATCH - GHI ĐÈ FILE ĐÍCH")
             
@@ -84,33 +74,26 @@ enum RealPatchManager {
                 return false
             }
             
-            // Backup nếu chưa có
             if targetExists && !fm.fileExists(atPath: backupPath) {
                 do {
                     try fm.copyItem(atPath: fullTargetPath, toPath: backupPath)
-                    writeLog("✅ Backup OK: \(backupPath)")
+                    writeLog("✅ Backup OK")
                 } catch {
                     writeLog("❌ Backup FAIL: \(error)")
                     return false
                 }
-            } else if targetExists {
-                writeLog("ℹ️ Backup đã tồn tại")
-            } else {
-                writeLog("⚠️ File đích không tồn tại, sẽ tạo mới")
             }
             
-            // GHI ĐÈ PATCH VÀO FILE ĐÍCH
             do {
                 try rule.replacementData.write(to: URL(fileURLWithPath: fullTargetPath), options: .atomic)
                 writeLog("✅ PATCH ĐÃ GHI ĐÈ: \(fullTargetPath)")
                 
-                // Verify
                 let written = try? Data(contentsOf: URL(fileURLWithPath: fullTargetPath))
                 if written == rule.replacementData {
-                    writeLog("✅ VERIFY OK - PATCH THÀNH CÔNG")
+                    writeLog("✅ VERIFY OK - THÀNH CÔNG")
                     return true
                 } else {
-                    writeLog("❌ VERIFY FAIL - DỮ LIỆU KHÔNG KHỚP")
+                    writeLog("❌ VERIFY FAIL")
                     return false
                 }
             } catch {
@@ -118,7 +101,7 @@ enum RealPatchManager {
                 return false
             }
         } else {
-            writeLog("🔴 TẮT PATCH - KHÔI PHỤC TỪ BACKUP")
+            writeLog("🔴 TẮT PATCH - KHÔI PHỤC")
             
             guard fm.fileExists(atPath: backupPath) else {
                 writeLog("⚠️ KHÔNG CÓ BACKUP")
@@ -128,7 +111,7 @@ enum RealPatchManager {
             do {
                 try fm.copyItem(atPath: backupPath, toPath: fullTargetPath)
                 try fm.removeItem(atPath: backupPath)
-                writeLog("✅ RESTORED: \(fullTargetPath)")
+                writeLog("✅ RESTORED")
                 return true
             } catch {
                 writeLog("❌ RESTORE FAIL: \(error)")
@@ -137,20 +120,16 @@ enum RealPatchManager {
         }
     }
     
-    // MARK: - Áp dụng patch (gọi từ GameDemoView) - TỰ ĐỘNG CHỌN ĐÚNG GAME
     static func applyPatchFromDefinition(
         definition: PatchDefinition,
         gameBundleID: String,
         isOn: Bool
     ) -> Bool {
         writeLog("========================================")
-        writeLog("🚀 applyPatchFromDefinition: \(definition.featureName)")
-        writeLog("🎮 gameBundleID: \(gameBundleID)")
-        writeLog("🔄 isOn: \(isOn)")
+        writeLog("🚀 \(definition.featureName) -> \(gameBundleID), isOn=\(isOn)")
         
-        // Kiểm tra game hợp lệ
         guard gameBundleID == "com.dts.freefireth" || gameBundleID == "com.dts.freefiremax" else {
-            writeLog("❌ GAME KHÔNG HỖ TRỢ: \(gameBundleID)")
+            writeLog("❌ GAME KHÔNG HỖ TRỢ")
             return false
         }
         
