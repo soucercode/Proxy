@@ -3,7 +3,7 @@ import Foundation
 enum RealPatchManager {
     private static let fm = FileManager.default
     
-    // MARK: - Ghi log
+    // MARK: - Ghi log ra file trong Documents
     private static func writeLog(_ message: String) {
         guard let documentsPath = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first else {
             return
@@ -21,7 +21,7 @@ enum RealPatchManager {
         print(logEntry)
     }
     
-    // MARK: - Lấy container path
+    // MARK: - Lấy container path của game
     static func getContainerPath(bundleID: String) -> String? {
         writeLog("🔍 getContainerPath: \(bundleID)")
         var error: NSString?
@@ -34,29 +34,39 @@ enum RealPatchManager {
     }
     
     // MARK: - Áp dụng patch cho 1 game cụ thể
-    static func applyPatchToGame(
+    static func applyPatchToSingleGame(
         definition: PatchDefinition,
         gameBundleID: String,
         isOn: Bool
     ) -> Bool {
+        writeLog("========================================")
         writeLog("📦 \(definition.featureName) -> \(gameBundleID), isOn=\(isOn)")
         
+        // Bước 1: Lấy container path
         guard let containerPath = getContainerPath(bundleID: gameBundleID) else {
             writeLog("❌ KHÔNG CÓ CONTAINER cho \(gameBundleID)")
             return false
         }
         
+        // Bước 2: Xác định đường dẫn đích
         let fullTargetPath = (containerPath as NSString).appendingPathComponent(definition.targetPath)
         let backupPath = fullTargetPath + ".backup"
         writeLog("📁 Target: \(fullTargetPath)")
+        writeLog("💾 Backup: \(backupPath)")
         
         let targetExists = fm.fileExists(atPath: fullTargetPath)
         writeLog("📄 File đích tồn tại: \(targetExists)")
         
-        guard let (project, _) = try? PatchAssetLoader.load(definition) else {
-            writeLog("❌ Không load được \(definition.assetName).3105")
+        // Bước 3: Load file .3105 theo đúng game
+        guard let (project, _) = try? PatchAssetLoader.load(
+            definition: definition,
+            gameBundleID: gameBundleID
+        ) else {
+            writeLog("❌ Không load được file cho \(gameBundleID)")
             return false
         }
+        
+        writeLog("✅ Project: \(project.name), rules: \(project.rules.count)")
         
         guard let rule = project.rules.first else {
             writeLog("❌ KHÔNG CÓ RULE")
@@ -64,7 +74,9 @@ enum RealPatchManager {
         }
         
         writeLog("📦 replacementData size: \(rule.replacementData.count) bytes")
+        writeLog("📦 originalData size: \(rule.originalData?.count ?? 0) bytes")
         
+        // Bước 4: Áp dụng hoặc khôi phục
         if isOn {
             writeLog("🟢 BẬT PATCH")
             
@@ -73,6 +85,7 @@ enum RealPatchManager {
                 return false
             }
             
+            // Backup nếu chưa có
             if targetExists && !fm.fileExists(atPath: backupPath) {
                 do {
                     try fm.copyItem(atPath: fullTargetPath, toPath: backupPath)
@@ -84,19 +97,21 @@ enum RealPatchManager {
             } else if targetExists {
                 writeLog("ℹ️ Backup đã tồn tại")
             } else {
-                writeLog("⚠️ File đích không tồn tại, tạo mới")
+                writeLog("⚠️ File đích không tồn tại, sẽ tạo mới")
             }
             
+            // Ghi patch
             do {
                 try rule.replacementData.write(to: URL(fileURLWithPath: fullTargetPath), options: .atomic)
                 writeLog("✅ PATCH APPLIED: \(fullTargetPath)")
                 
+                // Verify
                 let written = try? Data(contentsOf: URL(fileURLWithPath: fullTargetPath))
                 if written == rule.replacementData {
                     writeLog("✅ VERIFY OK")
                     return true
                 } else {
-                    writeLog("❌ VERIFY FAIL")
+                    writeLog("❌ VERIFY FAIL: dữ liệu không khớp")
                     return false
                 }
             } catch {
@@ -123,41 +138,51 @@ enum RealPatchManager {
         }
     }
     
-    // MARK: - Áp dụng patch cho CẢ 2 GAME (Free Fire và Free Fire Max)
+    // MARK: - Áp dụng patch cho game đang chọn (gọi từ GameDemoView)
     static func applyPatchFromDefinition(
         definition: PatchDefinition,
-        gameBundleID: String,  // Vẫn giữ tham số này để tương thích code cũ
+        gameBundleID: String,
         isOn: Bool
     ) -> Bool {
         writeLog("========================================")
+        writeLog("🚀 applyPatchFromDefinition: \(definition.featureName)")
+        writeLog("🎮 gameBundleID: \(gameBundleID)")
+        writeLog("🔄 isOn: \(isOn)")
+        
+        // Chỉ áp dụng cho game đang chọn
+        let result = applyPatchToSingleGame(
+            definition: definition,
+            gameBundleID: gameBundleID,
+            isOn: isOn
+        )
+        
+        writeLog("📊 Kết quả: \(result ? "✅ THÀNH CÔNG" : "❌ THẤT BẠI")")
+        return result
+    }
+    
+    // MARK: - Áp dụng patch cho CẢ 2 GAME (dùng nếu muốn bật 1 lần cho cả 2)
+    static func applyPatchToBothGames(
+        definition: PatchDefinition,
+        isOn: Bool
+    ) -> (freefire: Bool, freefiremax: Bool) {
+        writeLog("========================================")
         writeLog("🚀 Áp dụng cho CẢ 2 GAME: \(definition.featureName), isOn=\(isOn)")
         
-        // Danh sách 2 game
-        let gameBundleIDs = [
-            "com.dts.freefireth",      // Free Fire
-            "com.dts.freefiremax"      // Free Fire Max
-        ]
+        let ffResult = applyPatchToSingleGame(
+            definition: definition,
+            gameBundleID: "com.dts.freefireth",
+            isOn: isOn
+        )
         
-        var allSuccess = true
-        var successCount = 0
+        let ffmaxResult = applyPatchToSingleGame(
+            definition: definition,
+            gameBundleID: "com.dts.freefiremax",
+            isOn: isOn
+        )
         
-        for bundleID in gameBundleIDs {
-            let success = applyPatchToGame(
-                definition: definition,
-                gameBundleID: bundleID,
-                isOn: isOn
-            )
-            
-            if success {
-                successCount += 1
-                writeLog("✅ \(bundleID): THÀNH CÔNG")
-            } else {
-                allSuccess = false
-                writeLog("❌ \(bundleID): THẤT BẠI")
-            }
-        }
+        writeLog("📊 Free Fire: \(ffResult ? "✅" : "❌")")
+        writeLog("📊 Free Fire Max: \(ffmaxResult ? "✅" : "❌")")
         
-        writeLog("📊 Kết quả: \(successCount)/\(gameBundleIDs.count) game thành công")
-        return allSuccess
+        return (ffResult, ffmaxResult)
     }
 }
