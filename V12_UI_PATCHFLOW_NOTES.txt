@@ -1,0 +1,13 @@
+ProxyVN SHOP DHP V1.1 / build 4
+
+- Device info card keeps iOS + Device visible on the game screen.
+- Feature rows no longer show maintenance before an apply attempt.
+- Bundled patch flow: 4-second loading -> bundled Magic.3105 copy/verification -> green check.
+- Features without a bundled payload: 2-second attempt -> "Feature under maintenance" + red X.
+- Expired license blocks feature activation with "⚠️ Key đã hết hạn".
+- Magic V4 is linked to the bundled ThreeOneOSFive/Magic.3105 resource.
+- Logical target paths are displayed/associated for Free Fire and Free Fire Max, but the
+  demo patch engine writes only inside ProxyVN's own private Application Support workspace.
+  It does not write to or inject into another app's sandbox.
+- Compatibility gate remains: 16–16.7.x, 17–17.7.x, 18–18.7.1, 26–26.6.1, and iOS 27 prerelease
+  handling as implemented by SupportPolicy.swift.

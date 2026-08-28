@@ -1,0 +1,9 @@
+ProxyVN SHOP DHP - V22 UI / patch-flow update
+
+- Feature rows no longer show "Chức năng đang bảo trì" before an operation is attempted.
+- Each feature shows its normal description.
+- A successful bundled demo patch shows a green checkmark and success toast.
+- A failed apply changes that row to maintenance text + red X only after the failed attempt.
+- License expiration remains a hard gate; enabling is rejected with "⚠️ Key đã hết hạn".
+- Magic.3105 is bundled as the app resource and is applied/verified only inside the app's private demo workspace.
+- No code writes into another app's sandbox/container.

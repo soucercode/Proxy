@@ -1,0 +1,21 @@
+{
+  "note": "Source-preserving update. All original files and .3105 assets are retained.",
+  "features": {
+    "Proxy Aim Body": {
+      "FFTH": "Patches/Aim Body FFTH.3105",
+      "FFMAX": "Patches/Aim Body FFMAX.3105"
+    },
+    "Proxy Aim Neck V1": {
+      "FFTH": "Patches/Aim Neck V1 FFTH.3105",
+      "FFMAX": "Patches/Aim Neck V1 FFMAX.3105"
+    },
+    "Proxy Aim Neck V2": {
+      "FFTH": "Patches/Aim Neck V2 FFTH.3105",
+      "FFMAX": "Patches/Aim Neck V2 FFMAX.3105"
+    },
+    "Magic V4": {
+      "FFTH": "Patches/Magic V4 FFTH.3105",
+      "FFMAX": "Patches/Magic V4 FFMAX.3105"
+    }
+  }
+}
