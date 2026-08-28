@@ -6,7 +6,6 @@ enum PatchAssetLoader {
         gameBundleID: String
     ) throws -> (project: PatchProject, data: Data) {
         
-        // Chọn đúng asset name theo game
         let assetName: String
         if gameBundleID == "com.dts.freefireth" {
             assetName = definition.assetNameFFTH
@@ -28,7 +27,7 @@ enum PatchAssetLoader {
             throw NSError(
                 domain: "PatchAssetLoader",
                 code: 404,
-                userInfo: [NSLocalizedDescriptionKey: "Không tìm thấy \(assetName).3105"]
+                userInfo: [NSLocalizedDescriptionKey: "Không tìm thấy \(assetName).3105 trong thư mục Patches"]
             )
         }
         
