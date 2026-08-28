@@ -23,6 +23,9 @@ struct GameDemoView: View {
     @State private var enabled = Set<Int>()
     @State private var failedIndices = Set<Int>()
     
+    // ============================================================
+    // DANH SÁCH CHỨC NĂNG PROXY - ĐÃ GẮN ĐỦ 4 FILE .3105
+    // ============================================================
     private let proxyFeatures: [DemoFeature] = [
         DemoFeature(
             name: "Proxy Aim Body",
@@ -51,6 +54,9 @@ struct GameDemoView: View {
         )
     ]
     
+    // ============================================================
+    // DANH SÁCH CHỨC NĂNG ĐỊNH VỊ
+    // ============================================================
     private let locationFeatures: [DemoFeature] = [
         DemoFeature(name: "Định Vị Súng Xanh", description: "Hiển thị định vị theo cấu hình", definition: nil),
         DemoFeature(name: "Định Vị Súng Đỏ", description: "Hiển thị định vị theo cấu hình", definition: nil),
@@ -78,6 +84,7 @@ struct GameDemoView: View {
                             .font(.subheadline.monospaced())
                             .foregroundStyle(.secondary)
                         
+                        // Nút mở game
                         Button(action: openGame) {
                             HStack(spacing: 10) {
                                 Image(systemName: "play.fill")
@@ -93,8 +100,10 @@ struct GameDemoView: View {
                         }
                         .buttonStyle(.plain)
                         
+                        // Tab bar
                         tabBar
                         
+                        // Nội dung theo tab
                         Group {
                             switch selectedTab {
                             case 0: featureList(features: proxyFeatures)
@@ -118,6 +127,7 @@ struct GameDemoView: View {
         }
     }
     
+    // MARK: - Tab Bar
     private var tabBar: some View {
         HStack(spacing: 0) {
             GameTab(title: "Proxy", icon: "bolt.fill", active: selectedTab == 0, activeColor: .cyan) { selectTab(0) }
@@ -134,6 +144,7 @@ struct GameDemoView: View {
         withAnimation(.easeOut(duration: 0.18)) { selectedTab = tab }
     }
     
+    // MARK: - Danh sách feature
     private func featureList(features: [DemoFeature]) -> some View {
         VStack(spacing: 10) {
             ForEach(features.indices, id: \.self) { index in
@@ -151,14 +162,17 @@ struct GameDemoView: View {
         }
     }
     
+    // MARK: - Row feature (có toggle)
     private func featureRow(_ feature: DemoFeature, index: Int) -> some View {
         let accent = AppTheme.rowColor(index + selectedTab * 2)
         return HStack(spacing: 12) {
+            // Icon
             Image(systemName: enabled.contains(index) ? "checkmark" : "bolt.fill")
                 .foregroundStyle(enabled.contains(index) ? Color.green : accent)
                 .frame(width: 40, height: 40)
                 .background((enabled.contains(index) ? Color.green : accent).opacity(0.14), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
             
+            // Tên và mô tả
             VStack(alignment: .leading, spacing: 3) {
                 Text(feature.name).font(.headline).lineLimit(1)
                 Text(failedIndices.contains(index) ? "⚠️ Chức năng đang bảo trì" : feature.description)
@@ -168,6 +182,7 @@ struct GameDemoView: View {
             
             Spacer(minLength: 8)
             
+            // Loading / toggle
             if busyIndex == index {
                 ProgressView().progressViewStyle(.circular).tint(accent).frame(width: 34, height: 34)
             } else {
@@ -193,6 +208,7 @@ struct GameDemoView: View {
         .contentShape(Rectangle())
     }
     
+    // MARK: - Xử lý bật/tắt
     private func handleFeatureToggle(_ feature: DemoFeature, index: Int, value: Bool) {
         guard busyIndex == nil else { return }
         guard state.canUseFeatures else {
@@ -238,6 +254,7 @@ struct GameDemoView: View {
         }
     }
     
+    // MARK: - Mở game
     private func openGame() {
         let scheme = title == "Free Fire Max" ? "freefiremax" : "freefire"
         guard let url = URL(string: "\(scheme)://") else { return }
@@ -245,6 +262,7 @@ struct GameDemoView: View {
     }
 }
 
+// MARK: - GameTab
 struct GameTab: View {
     let title: String
     let icon: String
