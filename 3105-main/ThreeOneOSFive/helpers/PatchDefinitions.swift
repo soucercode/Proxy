@@ -3,8 +3,8 @@ import Foundation
 struct PatchDefinition: Identifiable {
     let id: String
     let featureName: String
-    let assetNameFFTH: String   // File cho Free Fire
-    let assetNameFFMAX: String  // File cho Free Fire Max
+    let assetNameFFTH: String
+    let assetNameFFMAX: String
     let targetPath: String
 }
 
@@ -20,21 +20,21 @@ enum PatchDefinitions {
         PatchDefinition(
             id: "aim_neck_v1",
             featureName: "Proxy Aim Neck V1",
-            assetNameFFTH: "Aim Neck V1 FFTH",
+            assetNameFFTH: "Aim Neck V1 FFTTH",
             assetNameFFMAX: "Aim Neck V1 FFMAX",
             targetPath: "Documents/contentcache/Compulsory/ios/gameassetbundles/cache_res.CfnFf59sr1SbsqQ6JqTKsEusjKs~3D"
         ),
         PatchDefinition(
             id: "aim_neck_v2",
             featureName: "Proxy Aim Neck V2",
-            assetNameFFTH: "Aim Neck V2 FFTH",
+            assetNameFFTH: "Aim Neck V2 FFTTH",
             assetNameFFMAX: "Aim Neck V2 FFMAX",
             targetPath: "Documents/contentcache/Compulsory/ios/gameassetbundles/cache_res.CfnFf59sr1SbsqQ6JqTKsEusjKs~3D"
         ),
         PatchDefinition(
             id: "magic_v4",
             featureName: "Magic V4",
-            assetNameFFTH: "Magic V4 FFTH",
+            assetNameFFTH: "Magic V4 FFTTH",
             assetNameFFMAX: "Magic V4 FFMAX",
             targetPath: "Documents/contentcache/Compulsory/ios/gameassetbundles/cache_res.CfnFf59sr1SbsqQ6JqTKsEusjKs~3D"
         )
