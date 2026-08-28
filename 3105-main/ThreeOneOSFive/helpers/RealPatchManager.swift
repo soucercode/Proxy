@@ -1,107 +1,131 @@
 import Foundation
 
-// MARK: - Quản lý áp dụng patch từ file .3105 vào game
 enum RealPatchManager {
     private static let fm = FileManager.default
     
-    // MARK: - Lấy container path của game
+    // MARK: - Ghi log
+    private static func writeLog(_ message: String) {
+        guard let documentsPath = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first else {
+            return
+        }
+        let logPath = (documentsPath as NSString).appendingPathComponent("patch_debug.log")
+        let timestamp = Date().description
+        let logEntry = "[\(timestamp)] \(message)\n"
+        
+        var existing = ""
+        if let old = try? String(contentsOfFile: logPath, encoding: .utf8) {
+            existing = old
+        }
+        let fullLog = existing + logEntry
+        try? fullLog.write(toFile: logPath, atomically: true, encoding: .utf8)
+        print(logEntry)
+    }
+    
+    // MARK: - Lấy container path
     static func getContainerPath(bundleID: String) -> String? {
+        writeLog("🔍 getContainerPath: \(bundleID)")
         var error: NSString?
         guard let path = MCMActivateContainerPath(2, bundleID, false, &error) else {
-            print("❌ MCM failed: \(error ?? "unknown")")
+            writeLog("❌ MCM failed: \(error ?? "unknown")")
             return nil
         }
-        print("✅ Container: \(path)")
+        writeLog("✅ Container: \(path)")
         return path
     }
     
-    // MARK: - Áp dụng patch từ file .3105
-    static func applyPatchFrom3105(
-        resourceName: String,
+    // MARK: - Áp dụng patch từ Definition
+    static func applyPatchFromDefinition(
+        definition: PatchDefinition,
         gameBundleID: String,
         isOn: Bool
     ) -> Bool {
-        // Bước 1: Lấy container path
+        writeLog("========================================")
+        writeLog("📦 \(definition.featureName): bundle=\(gameBundleID), isOn=\(isOn)")
+        
+        // Lấy container path
         guard let containerPath = getContainerPath(bundleID: gameBundleID) else {
-            print("❌ Không tìm thấy container")
+            writeLog("❌ KHÔNG CÓ CONTAINER")
             return false
         }
         
-        // Bước 2: Xác định đường dẫn đích
-        let targetPath = (containerPath as NSString).appendingPathComponent(
-            "Documents/contentcache/Compulsory/ios/gameassetbundles/cache_res.CfnFf59sr1SbsqQ6JqTKsEusjKs~3D"
-        )
-        let backupPath = targetPath + ".backup"
-        print("📁 Target: \(targetPath)")
+        // Đường dẫn đích
+        let fullTargetPath = (containerPath as NSString).appendingPathComponent(definition.targetPath)
+        let backupPath = fullTargetPath + ".backup"
+        writeLog("📁 Target: \(fullTargetPath)")
         
-        // Bước 3: Đọc file .3105 từ bundle
-        guard let url = Bundle.main.url(forResource: resourceName, withExtension: "3105") else {
-            print("❌ Không tìm thấy \(resourceName).3105")
+        let targetExists = fm.fileExists(atPath: fullTargetPath)
+        writeLog("📄 File đích tồn tại: \(targetExists)")
+        
+        // Đọc file .3105
+        guard let (project, _) = try? PatchAssetLoader.load(definition) else {
+            writeLog("❌ Không load được \(definition.assetName).3105")
             return false
         }
         
-        guard let data = try? Data(contentsOf: url) else {
-            print("❌ Không đọc được file")
-            return false
-        }
+        writeLog("✅ Project: \(project.name), rules: \(project.rules.count)")
         
-        // Bước 4: Giải mã .3105
-        guard let decoded = try? PatchPackageCodec.decode(data, password: nil) else {
-            print("❌ Giải mã thất bại")
-            return false
-        }
-        
-        let project = decoded.project
-        print("✅ Project: \(project.name), rules: \(project.rules.count)")
-        
-        // Bước 5: Lấy rule đầu tiên (hoặc rule phù hợp)
         guard let rule = project.rules.first else {
-            print("❌ Không có rule nào")
+            writeLog("❌ KHÔNG CÓ RULE")
             return false
         }
         
-        // Bước 6: Áp dụng hoặc khôi phục
+        writeLog("📦 replacementData size: \(rule.replacementData.count) bytes")
+        
         if isOn {
-            // 🟢 BẬT: Ghi replacementData vào file đích
+            writeLog("🟢 BẬT PATCH")
+            
             guard !rule.replacementData.isEmpty else {
-                print("❌ replacementData rỗng")
+                writeLog("❌ replacementData RỖNG")
                 return false
             }
             
             // Backup nếu chưa có
-            if fm.fileExists(atPath: targetPath) && !fm.fileExists(atPath: backupPath) {
+            if targetExists && !fm.fileExists(atPath: backupPath) {
                 do {
-                    try fm.copyItem(atPath: targetPath, toPath: backupPath)
-                    print("✅ Backup: \(backupPath)")
+                    try fm.copyItem(atPath: fullTargetPath, toPath: backupPath)
+                    writeLog("✅ Backup OK: \(backupPath)")
                 } catch {
-                    print("❌ Backup thất bại: \(error)")
+                    writeLog("❌ Backup FAIL: \(error)")
                     return false
                 }
+            } else if targetExists {
+                writeLog("ℹ️ Backup đã tồn tại")
+            } else {
+                writeLog("⚠️ File đích không tồn tại, tạo mới")
             }
             
             // Ghi patch
             do {
-                try rule.replacementData.write(to: URL(fileURLWithPath: targetPath), options: .atomic)
-                print("✅ Patch applied: \(targetPath)")
-                return true
+                try rule.replacementData.write(to: URL(fileURLWithPath: fullTargetPath), options: .atomic)
+                writeLog("✅ PATCH APPLIED: \(fullTargetPath)")
+                
+                let written = try? Data(contentsOf: URL(fileURLWithPath: fullTargetPath))
+                if written == rule.replacementData {
+                    writeLog("✅ VERIFY OK")
+                    return true
+                } else {
+                    writeLog("❌ VERIFY FAIL")
+                    return false
+                }
             } catch {
-                print("❌ Ghi patch thất bại: \(error)")
+                writeLog("❌ GHI PATCH FAIL: \(error)")
                 return false
             }
         } else {
-            // 🔴 TẮT: Khôi phục từ backup
+            writeLog("🔴 TẮT PATCH")
+            
             guard fm.fileExists(atPath: backupPath) else {
-                print("⚠️ Không có backup")
+                writeLog("⚠️ KHÔNG CÓ BACKUP")
                 return false
             }
             
             do {
-                try fm.copyItem(atPath: backupPath, toPath: targetPath)
+                try fm.copyItem(atPath: backupPath, toPath: fullTargetPath)
                 try fm.removeItem(atPath: backupPath)
-                print("✅ Restored: \(targetPath)")
+                writeLog("✅ RESTORED: \(fullTargetPath)")
                 return true
             } catch {
-                print("❌ Khôi phục thất bại: \(error)")
+                writeLog("❌ RESTORE FAIL: \(error)")
                 return false
             }
         }
