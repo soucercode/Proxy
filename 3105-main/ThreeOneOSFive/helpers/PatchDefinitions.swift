@@ -20,21 +20,21 @@ enum PatchDefinitions {
         PatchDefinition(
             id: "aim_neck_v1",
             featureName: "Proxy Aim Neck V1",
-            assetNameFFTH: "Aim Neck V1 FFTTH",
+            assetNameFFTH: "Aim Neck V1 FFTH",      // ← PHẢI CÓ FILE NÀY
             assetNameFFMAX: "Aim Neck V1 FFMAX",
             targetPath: "Documents/contentcache/Compulsory/ios/gameassetbundles/cache_res.CfnFf59sr1SbsqQ6JqTKsEusjKs~3D"
         ),
         PatchDefinition(
             id: "aim_neck_v2",
             featureName: "Proxy Aim Neck V2",
-            assetNameFFTH: "Aim Neck V2 FFTTH",
+            assetNameFFTH: "Aim Neck V2 FFTH",
             assetNameFFMAX: "Aim Neck V2 FFMAX",
             targetPath: "Documents/contentcache/Compulsory/ios/gameassetbundles/cache_res.CfnFf59sr1SbsqQ6JqTKsEusjKs~3D"
         ),
         PatchDefinition(
             id: "magic_v4",
             featureName: "Magic V4",
-            assetNameFFTH: "Magic V4 FFTTH",
+            assetNameFFTH: "Magic V4 FFTH",
             assetNameFFMAX: "Magic V4 FFMAX",
             targetPath: "Documents/contentcache/Compulsory/ios/gameassetbundles/cache_res.CfnFf59sr1SbsqQ6JqTKsEusjKs~3D"
         )
