@@ -63,6 +63,7 @@ struct GameDemoView: View {
                 ProxyBackground()
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
+                        // Icon game
                         Image(imageName)
                             .resizable()
                             .scaledToFit()
