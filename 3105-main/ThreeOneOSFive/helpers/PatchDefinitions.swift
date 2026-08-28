@@ -20,7 +20,7 @@ enum PatchDefinitions {
         PatchDefinition(
             id: "aim_neck_v1",
             featureName: "Proxy Aim Neck V1",
-            assetNameFFTH: "Aim Neck V1 FFTH",      // ← PHẢI CÓ FILE NÀY
+            assetNameFFTH: "Aim Neck V1 FFTH",
             assetNameFFMAX: "Aim Neck V1 FFMAX",
             targetPath: "Documents/contentcache/Compulsory/ios/gameassetbundles/cache_res.CfnFf59sr1SbsqQ6JqTKsEusjKs~3D"
         ),
